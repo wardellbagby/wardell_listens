@@ -20,6 +20,13 @@ private fun SuggestedTrack.asTweet(): String {
 suspend fun main() {
   val now = Clock.System.now()
   val lastWeek = now.minus(7.days)
+
+  val ignoredSpotifyUrls = loadFromResources(ignoredTracksFile)
+    ?.split("\n")
+    ?: emptyList()
+
+  println("Ignored spotify URLs: $ignoredSpotifyUrls")
+
   val listensResult = runCatching {
     fetchTracks(
       start = lastWeek,
@@ -33,7 +40,6 @@ suspend fun main() {
   val listens = listensResult.getOrThrow()
   println("Found ${listens.size} total listens!")
 
-  val ignoredSpotifyUrls = loadFromResources(ignoredTracksFile)?.split("\n") ?: listOf()
   val suggestedTrack = getSuggestedTrack(
     ignoredSpotifyUrls = ignoredSpotifyUrls,
     listens = listens

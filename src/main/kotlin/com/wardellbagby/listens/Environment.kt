@@ -9,8 +9,7 @@ private fun loadFromEnvFile(filename: String): Map<String, String> {
     ?.associate { line ->
       val (key, value) = line.split("=")
       key to value
-    }
-    ?: emptyMap()
+    } ?: emptyMap()
 }
 
 data class Environment(
