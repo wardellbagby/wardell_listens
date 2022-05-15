@@ -92,7 +92,9 @@ suspend fun main() {
 
   if (listensResult.isFailure) {
     listensResult.exceptionOrNull()!!.printStack()
+    return
   }
+
   val listens = listensResult.getOrThrow()
   println("Found ${listens.size} total listens!")
 
@@ -101,8 +103,7 @@ suspend fun main() {
     listens = listens
   )
 
-  println(suggestedTrack.asTweet())
-  postTweet(suggestedTrack.asTweet())
+  postTweet(suggestedTrack.asTweet().also { println(it) })
   updateIgnoredTracks(suggestedTrack)
 }
 

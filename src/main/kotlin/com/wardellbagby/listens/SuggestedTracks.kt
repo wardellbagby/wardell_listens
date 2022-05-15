@@ -4,8 +4,14 @@ import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import kotlinx.coroutines.delay
-import kotlinx.serialization.Serializable
 import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone.Companion.currentSystemDefault
+import kotlinx.datetime.toJavaInstant
+import kotlinx.datetime.toJavaZoneId
+import kotlinx.serialization.Serializable
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle.FULL
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -100,6 +106,17 @@ suspend fun fetchListens(
   start: Instant,
   end: Instant
 ): List<Listen> {
+  with(DateTimeFormatter.ofLocalizedDateTime(FULL)) {
+    val startDateTime =
+      ZonedDateTime.ofInstant(start.toJavaInstant(), currentSystemDefault().toJavaZoneId())
+    val endDateTime =
+      ZonedDateTime.ofInstant(end.toJavaInstant(), currentSystemDefault().toJavaZoneId())
+
+    println(
+      "Fetching listens from ${format(startDateTime)} to ${format(endDateTime)}"
+    )
+  }
+
   val startTimestamp = start.epochSeconds
   var endTimestamp = end.epochSeconds
 
@@ -125,8 +142,8 @@ suspend fun fetchListens(
     if (lastItemCount == expectedCount) {
       // Subtract one to avoid duplicate listens.
       endTimestamp = newListens.last().listened_at - 1L
-      delay(API_DELAY)
       println("Waiting to load more listens")
+      delay(API_DELAY)
     } else {
       println("Loaded all listens!")
     }
