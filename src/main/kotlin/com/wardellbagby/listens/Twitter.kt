@@ -11,6 +11,10 @@ import blue.starry.penicillin.models.Status
 import io.ktor.utils.io.core.use
 import kotlinx.serialization.json.buildJsonObject
 
+/**
+ * Post a Tweet to the account specified by [Environment.twitterAccessToken] with the text contained
+ * in [message].
+ */
 suspend fun postTweet(message: String) {
   PenicillinClient {
     account {

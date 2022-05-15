@@ -6,10 +6,18 @@ import io.ktor.client.request.parameter
 import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 import kotlinx.datetime.Instant
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-private val API_DELAY = 5.seconds
-private val topListensEndpoint =
+/**
+ * The delay that should be used when accessing the ListenBrainz API.
+ */
+private val API_DELAY: Duration = 5.seconds
+
+/**
+ * The API endpoint for ListenBrainz that will return listens for a user.
+ */
+private val listensEndpoint =
   "https://api.listenbrainz.org/1/user/${environment.listenbrainzUsername}/listens"
 
 @Serializable
@@ -39,21 +47,41 @@ data class SuggestedTrack(
   val listenCount: Int
 )
 
+/**
+ * Get a track that is suitable to be suggested to people that hasn't ever been suggested before.
+ *
+ * @param ignoredSpotifyUrls Spotify URLs (gotten from [SuggestedTrack.spotifyUrl] that have been
+ * previously suggested.
+ * @param listens A list of [Listen]s from ListenBrainz.
+ */
 fun getSuggestedTrack(
   ignoredSpotifyUrls: List<String>,
   listens: List<Listen>
 ): SuggestedTrack {
-  val trackCounts = listens.filter {
-    val spotifyUrl = it.track_metadata.additional_info?.spotify_id
-    spotifyUrl != null && spotifyUrl !in ignoredSpotifyUrls
-  }.also {
-    val distinctByListenTime = it.distinctBy { listen -> listen.listened_at }
-
-    require(distinctByListenTime.size == it.size) {
-      "Received listens that have the exact same timestamp!"
+  val trackCounts = listens
+    .filter {
+      // Filter out any listens that don't have a Spotify ID or that have been suggested before.
+      val spotifyUrl = it.track_metadata.additional_info?.spotify_id
+      spotifyUrl != null && spotifyUrl !in ignoredSpotifyUrls
     }
-  }.groupBy { it.track_metadata.additional_info!!.spotify_id }
-    .map { (_, listens) -> listens.first() to listens.size }.toMap()
+    .also {
+      // Verifies that all Listens occur at distinctly different times to avoid potential
+      // duplicates.
+      val distinctByListenTime = it.distinctBy { listen -> listen.listened_at }
+
+      require(distinctByListenTime.size == it.size) {
+        "Received listens that have the exact same timestamp!"
+      }
+    }
+    .groupBy {
+      // Group all listens that share a Spotify ID
+      it.track_metadata.additional_info!!.spotify_id
+    }
+    .map { (_, listens) ->
+      // Convert into a Map of Listen to the number of times that Listen was seen.
+      listens.first() to listens.size
+    }
+    .toMap()
 
   val (listen, count) = trackCounts.maxByOrNull { it.value }!!.let { it.key to it.value }
 
@@ -65,7 +93,10 @@ fun getSuggestedTrack(
   )
 }
 
-suspend fun fetchTracks(
+/**
+ * Fetch listens from ListenBrainz that occur between [start] and [end].
+ */
+suspend fun fetchListens(
   start: Instant,
   end: Instant
 ): List<Listen> {
@@ -77,7 +108,8 @@ suspend fun fetchTracks(
   val listens = mutableListOf<Listen>()
 
   do {
-    val response = httpClient.get<Response>(topListensEndpoint) {
+    val response = httpClient.get<Response>(listensEndpoint) {
+      // This endpoint also accepts a "min_ts", but you can't specify both.
       parameter("max_ts", endTimestamp)
       parameter("count", expectedCount)
       header("Accept", "application/json")
@@ -91,6 +123,7 @@ suspend fun fetchTracks(
     println("Found $lastItemCount listens")
 
     if (lastItemCount == expectedCount) {
+      // Subtract one to avoid duplicate listens.
       endTimestamp = newListens.last().listened_at - 1L
       delay(API_DELAY)
       println("Waiting to load more listens")
