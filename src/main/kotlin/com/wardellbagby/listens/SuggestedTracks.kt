@@ -63,7 +63,7 @@ data class SuggestedTrack(
 fun getSuggestedTrack(
   ignoredSpotifyUrls: List<String>,
   listens: List<Listen>
-): SuggestedTrack {
+): SuggestedTrack? {
   val trackCounts = listens
     .filter {
       // Filter out any listens that don't have a Spotify ID or that have been suggested before.
@@ -89,14 +89,25 @@ fun getSuggestedTrack(
     }
     .toMap()
 
-  val (listen, count) = trackCounts.maxByOrNull { it.value }!!.let { it.key to it.value }
-
-  return SuggestedTrack(
-    name = listen.track_metadata.track_name,
-    artist = listen.track_metadata.artist_name,
-    spotifyUrl = listen.track_metadata.additional_info!!.spotify_id!!,
-    listenCount = count
+  println(
+    trackCounts
+      .toList()
+      .sortedByDescending { (_, count) -> count }
+      .joinToString(separator = "\n") { (listen, count) ->
+        "$count - ${listen.track_metadata.track_name}"
+      }
   )
+
+  return trackCounts
+    .maxByOrNull { it.value }
+    ?.let { (listen, count) ->
+      SuggestedTrack(
+        name = listen.track_metadata.track_name,
+        artist = listen.track_metadata.artist_name,
+        spotifyUrl = listen.track_metadata.additional_info!!.spotify_id!!,
+        listenCount = count
+      )
+    }
 }
 
 /**

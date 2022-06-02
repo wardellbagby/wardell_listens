@@ -73,9 +73,9 @@ private fun SuggestedTrack.asTweet(): String {
 }
 
 suspend fun main() {
-  // Get a date range representing from a week ago today until right this moment.
+  // Get a date range representing from a month ago today until right this moment.
   val now = Clock.System.now()
-  val lastWeek = now.minus(7.days)
+  val lastWeek = now.minus(30.days)
 
   val ignoredSpotifyUrls = loadFromResources(ignoredTracksFile)
     ?.split("\n")
@@ -101,9 +101,11 @@ suspend fun main() {
   val suggestedTrack = getSuggestedTrack(
     ignoredSpotifyUrls = ignoredSpotifyUrls,
     listens = listens
-  )
+  ) ?: error("Unable to find suggested track!")
 
-  postTweet(suggestedTrack.asTweet().also { println(it) })
+  postTweet(
+    suggestedTrack.asTweet().also { println(it) }
+  )
   updateIgnoredTracks(suggestedTrack)
 }
 
