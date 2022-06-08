@@ -10,9 +10,10 @@ private const val URL_TEMPLATE = "{URL}"
 private const val TWEET_MAX_LENGTH = 280
 private const val TWITTER_URL_LENGTH = 23
 
+private const val TWEET_HEADER = "This week's song is:"
 private val SuggestedTrack.extendedTweetTemplate: String
   get() = """
-  This week's song suggestion is:
+  $TWEET_HEADER
   
   $name by $artist
 
@@ -24,7 +25,7 @@ private val SuggestedTrack.extendedTweetTemplate: String
 
 private val SuggestedTrack.standardTweetTemplate: String
   get() = """
-  This week's song suggestion is:
+  $TWEET_HEADER
   
   $name
 
@@ -35,7 +36,7 @@ private val SuggestedTrack.standardTweetTemplate: String
     .trimIndent()
 
 private const val shortTweetTemplate: String = """
-    This week's song suggestion is:
+    $TWEET_HEADER
 
     $URL_TEMPLATE
     
