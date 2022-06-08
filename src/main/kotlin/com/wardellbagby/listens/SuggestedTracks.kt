@@ -87,19 +87,24 @@ fun getSuggestedTrack(
       // Convert into a Map of Listen to the number of times that Listen was seen.
       listens.first() to listens.size
     }
-    .toMap()
 
-  println(
-    trackCounts
-      .toList()
-      .sortedByDescending { (_, count) -> count }
-      .joinToString(separator = "\n") { (listen, count) ->
-        "$count - ${listen.track_metadata.track_name}"
-      }
-  )
+  trackCounts
+    .toLogMessage()
+    .also {
+      println("All listens in time period")
+      println(it)
+      println()
+    }
 
   return trackCounts
-    .maxByOrNull { it.value }
+    .sortedByDescending { (_, count) -> count }
+    .take(trackCounts.size / 10)
+    .also {
+      println("Possible choices")
+      println(it.toLogMessage())
+      println()
+    }
+    .randomOrNull()
     ?.let { (listen, count) ->
       SuggestedTrack(
         name = listen.track_metadata.track_name,
@@ -161,4 +166,10 @@ suspend fun fetchListens(
   } while (lastItemCount == expectedCount)
 
   return listens
+}
+
+private fun List<Pair<Listen, Int>>.toLogMessage(): String {
+  return joinToString(separator = "\n") { (listen, count) ->
+    "$count - ${listen.track_metadata.track_name}"
+  }
 }

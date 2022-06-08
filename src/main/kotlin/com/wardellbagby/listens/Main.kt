@@ -101,10 +101,15 @@ suspend fun main() {
   val suggestedTrack = getSuggestedTrack(
     ignoredSpotifyUrls = ignoredSpotifyUrls,
     listens = listens
-  ) ?: error("Unable to find suggested track!")
+  )
+    ?.also {
+      println("Selected track")
+      println(it)
+    }
+    ?: error("Unable to find suggested track!")
 
   postTweet(
-    suggestedTrack.asTweet().also { println(it) }
+    suggestedTrack.asTweet()
   )
   updateIgnoredTracks(suggestedTrack)
 }
