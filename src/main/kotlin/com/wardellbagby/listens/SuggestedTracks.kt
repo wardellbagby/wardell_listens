@@ -23,7 +23,7 @@ private val API_DELAY: Duration = 5.seconds
 /**
  * The API endpoint for ListenBrainz that will return listens for a user.
  */
-private val listensEndpoint =
+private val LISTENS_ENDPOINT =
   "https://api.listenbrainz.org/1/user/${environment.listenbrainzUsername}/listens"
 
 @Serializable
@@ -141,7 +141,7 @@ suspend fun fetchListens(
   val listens = mutableListOf<Listen>()
 
   do {
-    val response = httpClient.get<Response>(listensEndpoint) {
+    val response = httpClient.get<Response>(LISTENS_ENDPOINT) {
       // This endpoint also accepts a "min_ts", but you can't specify both.
       parameter("max_ts", endTimestamp)
       parameter("count", expectedCount)

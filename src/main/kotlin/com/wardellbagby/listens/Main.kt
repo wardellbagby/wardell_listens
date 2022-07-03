@@ -1,10 +1,15 @@
 package com.wardellbagby.listens
 
+import io.ktor.client.request.post
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import io.ktor.utils.io.printStack
 import kotlinx.datetime.Clock
+import kotlinx.serialization.Serializable
 import kotlin.io.path.writeText
 import kotlin.time.Duration.Companion.days
 
+private const val SONGWHIP_ENDPOINT = "https://songwhip.com/"
 private const val ignoredTracksFile = "ignored.txt"
 private const val URL_TEMPLATE = "{URL}"
 private const val TWEET_MAX_LENGTH = 280
@@ -61,7 +66,7 @@ private fun String.replaceUrlTemplate(
  * and artist of this [SuggestedTrack] is. This will choose the longest possible tweet that doesn't
  * go over [TWEET_MAX_LENGTH].
  */
-private fun SuggestedTrack.asTweet(): String {
+private suspend fun SuggestedTrack.toTweet(): String {
   return sequence {
     yield(extendedTweetTemplate to extendedTweetTemplate.replaceUrlTemplate())
     yield(standardTweetTemplate to standardTweetTemplate.replaceUrlTemplate())
@@ -70,7 +75,7 @@ private fun SuggestedTrack.asTweet(): String {
     .first { (_, templateWithMockUrl) ->
       templateWithMockUrl.length <= TWEET_MAX_LENGTH
     }
-    .let { (template, _) -> template.replaceUrlTemplate(spotifyUrl) }
+    .let { (template, _) -> template.replaceUrlTemplate(spotifyUrl.toSongwhipUrl()) }
 }
 
 suspend fun main() {
@@ -109,9 +114,12 @@ suspend fun main() {
     }
     ?: error("Unable to find suggested track!")
 
-  postTweet(
-    suggestedTrack.asTweet()
-  )
+  val tweet = suggestedTrack.toTweet().also {
+    println("Tweet:")
+    println(it)
+  }
+
+  postTweet(tweet)
   updateIgnoredTracks(suggestedTrack)
 }
 
@@ -127,4 +135,28 @@ private fun updateIgnoredTracks(track: SuggestedTrack) {
 
   environment.ignoredTracksOutput
     .writeText(track.spotifyUrl)
+}
+
+@Serializable
+private data class SongwhipResponse(
+  val url: String
+)
+
+private suspend fun String.toSongwhipUrl(): String {
+  println("Converting URL \"$this\" to a Songwhip URL")
+  return runCatching {
+    httpClient.post<SongwhipResponse>(urlString = SONGWHIP_ENDPOINT) {
+      contentType(ContentType.Application.Json)
+      body = mapOf("url" to this@toSongwhipUrl)
+    }
+      .url
+      .also {
+        println("Received Songwhip URL: $it")
+      }
+  }
+    .onFailure {
+      println("Failed to convert; falling back to Spotify URL")
+      it.printStackTrace()
+    }
+    .getOrDefault(this)
 }
