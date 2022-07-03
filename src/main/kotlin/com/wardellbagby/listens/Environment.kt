@@ -27,7 +27,7 @@ data class Environment(
   val twitterConsumerSecret: String,
   val twitterAccessToken: String,
   val twitterAccessTokenSecret: String,
-  val ignoredTracksOutput: Path
+  val ignoredTracksPath: Path
 )
 
 private fun Map<String, String>.getOrThrow(key: String): String {
@@ -44,8 +44,8 @@ val environment: Environment =
         twitterConsumerSecret = it.getOrThrow("TWITTER_CONSUMER_SECRET"),
         twitterAccessToken = it.getOrThrow("TWITTER_ACCESS_TOKEN"),
         twitterAccessTokenSecret = it.getOrThrow("TWITTER_ACCESS_TOKEN_SECRET"),
-        ignoredTracksOutput = Paths
-          .get(it.getOrThrow("IGNORED_TRACKS_OUTPUT"))
+        ignoredTracksPath = Paths
+          .get(it.getOrThrow("IGNORED_TRACKS_FILE"))
           .toAbsolutePath()
       )
     }

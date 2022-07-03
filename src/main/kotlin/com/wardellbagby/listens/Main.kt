@@ -6,11 +6,11 @@ import io.ktor.http.contentType
 import io.ktor.utils.io.printStack
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
-import kotlin.io.path.writeText
+import kotlin.io.path.appendText
+import kotlin.io.path.readText
 import kotlin.time.Duration.Companion.days
 
 private const val SONGWHIP_ENDPOINT = "https://songwhip.com/"
-private const val ignoredTracksFile = "ignored.txt"
 private const val URL_TEMPLATE = "{URL}"
 private const val TWEET_MAX_LENGTH = 280
 private const val TWITTER_URL_LENGTH = 23
@@ -83,9 +83,9 @@ suspend fun main() {
   val now = Clock.System.now()
   val lastWeek = now.minus(30.days)
 
-  val ignoredSpotifyUrls = loadFromResources(ignoredTracksFile)
-    ?.split("\n")
-    ?: emptyList()
+  val ignoredSpotifyUrls = environment.ignoredTracksPath
+    .readText()
+    .split("\n")
 
   println("Ignored spotify URLs: $ignoredSpotifyUrls")
 
@@ -124,17 +124,17 @@ suspend fun main() {
 }
 
 /**
- * Write the track that was suggested to the file specified by [Environment.ignoredTracksOutput].
+ * Write the track that was suggested to the file specified by [Environment.ignoredTracksPath].
  *
  * We do this so that the GitHub Workflow that will run this can read that file to see what track
  * was tweeted, so that it may then add a new commit to this repo updating ignored.txt with that
  * track.
  */
 private fun updateIgnoredTracks(track: SuggestedTrack) {
-  println("Adding ${track.spotifyUrl} to ignored using file ${environment.ignoredTracksOutput}")
+  println("Adding ${track.spotifyUrl} to ignored using file ${environment.ignoredTracksPath}")
 
-  environment.ignoredTracksOutput
-    .writeText(track.spotifyUrl)
+  environment.ignoredTracksPath
+    .appendText(track.spotifyUrl)
 }
 
 @Serializable

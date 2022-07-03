@@ -19,6 +19,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '11'
+      - name: "Download ignored tracks"
+        run: 'curl https://raw.githubusercontent.com/$GITHUB_REPOSITORY/ignored-tracks/ignored.txt --output /tmp/ignored.txt'
       - name: 'Build the jar'
         run: './gradlew shadowJar'
       - name: 'Publish suggested track'
@@ -28,13 +30,17 @@ jobs:
           TWITTER_CONSUMER_SECRET: '${{ secrets.TWITTER_CONSUMER_SECRET }}'
           TWITTER_ACCESS_TOKEN: '${{ secrets.TWITTER_ACCESS_TOKEN }}'
           TWITTER_ACCESS_TOKEN_SECRET: '${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}'
-          IGNORED_TRACKS_OUTPUT: '/tmp/ignored.txt'
+          IGNORED_TRACKS_FILE: '/tmp/ignored.txt'
         run: 'java -jar build/libs/wardell_listens.jar'
       - name: 'Get suggested track URL'
         id: 'track-url'
-        run: 'echo "::set-output name=IGNORED_TRACK::$(cat /tmp/ignored.txt)"'
-      - name: 'Update ignored tracks'
-        run: 'echo "${{ steps.track-url.outputs.IGNORED_TRACK }}" >> src/main/resources/ignored.txt'
+        run: 'echo "::set-output name=IGNORED_TRACK::$(tail -1 /tmp/ignored.txt)"'
+      - name: 'Checkout ignored tracks branch'
+        uses: 'actions/checkout@v3'
+        with:
+          ref: 'ignored-tracks'
+      - name: 'Copy ignored tracks from temp file'
+        run: 'cp /tmp/ignored.txt ignored.txt'
       - name: "Add & commit new ignored track"
         uses: 'stefanzweifel/git-auto-commit-action@v4'
         with:
