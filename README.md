@@ -15,8 +15,8 @@ action, scheduled to run every Monday morning, to comb through the monthly liste
 find a new track to tweet out.
 
 In order to avoid duplicates, it will also post a new commit to this repo on
-the [ignored-tracks branch](https://github.com/wardellbagby/wardell_listens/ignored.txt), updating a
-file with the Spotify URL of the song it chose to tweet out.
+the [ignored-tracks branch](https://github.com/wardellbagby/wardell_listens/blob/ignored-tracks/ignored.txt)
+, updating a file with the Spotify URL of the song it chose to tweet out.
 
 ## Why does it exist?
 
@@ -39,7 +39,7 @@ You sure can! Fork this project into your own repository and set up these secret
 5. TWITTER_ACCESS_TOKEN_SECRET: Can be retrieved from the same flow as the TWITTER_ACCESS_TOKEN.
 
 You'll also want to remove all the text in
-this [file on the ignored-tracks branch](https://github.com/wardellbagby/wardell_listens/ignored.txt)
+this [file on the ignored-tracks branch](https://github.com/wardellbagby/wardell_listens/blob/ignored-tracks/ignored.txt)
 so that your bot can tweet out songs mine might already have. Make sure to keep the branch and the
 file though, as it's expected to exist by the Github Action.
 
