@@ -1,24 +1,29 @@
 package com.wardellbagby.listens
 
+import com.wardellbagby.listens.Target.Micropub
+import com.wardellbagby.listens.Target.Twitter
 import io.ktor.client.request.post
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.utils.io.printStack
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
+import post
+import java.nio.file.Path
+import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.time.Duration.Companion.days
 
 private const val SONGWHIP_ENDPOINT = "https://songwhip.com/"
 private const val URL_TEMPLATE = "{URL}"
-private const val TWEET_MAX_LENGTH = 280
+private const val POST_MAX_LENGTH = 280
 private const val TWITTER_URL_LENGTH = 23
 
-private const val TWEET_HEADER = "This week's song is:"
-private val SuggestedTrack.extendedTweetTemplate: String
+private const val POST_HEADER = "This week's song is:"
+private val SuggestedTrack.extendedPostTemplate: String
   get() = """
-  $TWEET_HEADER
+  $POST_HEADER
   
   $name by $artist
 
@@ -28,9 +33,9 @@ private val SuggestedTrack.extendedTweetTemplate: String
   """
     .trimIndent()
 
-private val SuggestedTrack.standardTweetTemplate: String
+private val SuggestedTrack.standardPostTemplate: String
   get() = """
-  $TWEET_HEADER
+  $POST_HEADER
   
   $name
 
@@ -40,8 +45,8 @@ private val SuggestedTrack.standardTweetTemplate: String
   """
     .trimIndent()
 
-private const val shortTweetTemplate: String = """
-    $TWEET_HEADER
+private const val shortPostTemplate: String = """
+    $POST_HEADER
 
     $URL_TEMPLATE
     
@@ -52,7 +57,7 @@ private const val shortTweetTemplate: String = """
  * Replaces instances of [URL_TEMPLATE] with [replacement].
  *
  * By default, [replacement] is a string of length [TWITTER_URL_LENGTH], which enables accurately
- * knowing the length of a tweet before we post it.
+ * knowing the length of a post before we post it.
  */
 private fun String.replaceUrlTemplate(
   replacement: String = "A".repeat(TWITTER_URL_LENGTH)
@@ -62,18 +67,18 @@ private fun String.replaceUrlTemplate(
 )
 
 /**
- * Convert this [SuggestedTrack] into a tweet. The format of the Tweet depends on how long the title
- * and artist of this [SuggestedTrack] is. This will choose the longest possible tweet that doesn't
- * go over [TWEET_MAX_LENGTH].
+ * Convert this [SuggestedTrack] into a postable message. The format of the post depends on how
+ * long the title and artist of this [SuggestedTrack] is. This will choose the longest possible
+ * message that doesn't go over [POST_MAX_LENGTH].
  */
-private suspend fun SuggestedTrack.toTweet(): String {
+private suspend fun SuggestedTrack.toPostableMessage(): String {
   return sequence {
-    yield(extendedTweetTemplate to extendedTweetTemplate.replaceUrlTemplate())
-    yield(standardTweetTemplate to standardTweetTemplate.replaceUrlTemplate())
-    yield(shortTweetTemplate to shortTweetTemplate.replaceUrlTemplate())
+    yield(extendedPostTemplate to extendedPostTemplate.replaceUrlTemplate())
+    yield(standardPostTemplate to standardPostTemplate.replaceUrlTemplate())
+    yield(shortPostTemplate to shortPostTemplate.replaceUrlTemplate())
   }
     .first { (_, templateWithMockUrl) ->
-      templateWithMockUrl.length <= TWEET_MAX_LENGTH
+      templateWithMockUrl.length <= POST_MAX_LENGTH
     }
     .let { (template, _) -> template.replaceUrlTemplate(spotifyUrl.toSongwhipUrl()) }
 }
@@ -81,17 +86,17 @@ private suspend fun SuggestedTrack.toTweet(): String {
 suspend fun main() {
   // Get a date range representing from a month ago today until right this moment.
   val now = Clock.System.now()
-  val lastWeek = now.minus(30.days)
+  val lastMonth = now.minus(30.days)
 
   val ignoredSpotifyUrls = environment.ignoredTracksPath
-    .readText()
+    .readTextOrEmpty()
     .split("\n")
 
   println("Ignored spotify URLs: $ignoredSpotifyUrls")
 
   val listensResult = runCatching {
     fetchListens(
-      start = lastWeek,
+      start = lastMonth,
       end = now
     )
   }
@@ -114,12 +119,14 @@ suspend fun main() {
     }
     ?: error("Unable to find suggested track!")
 
-  val tweet = suggestedTrack.toTweet().also {
-    println("Tweet:")
+  val message = suggestedTrack.toPostableMessage().also {
+    println("Post:")
     println(it)
   }
 
-  postTweet(tweet)
+  environment.targets.forEach {
+    it.post(message)
+  }
   updateIgnoredTracks(currentIgnoredTracks = ignoredSpotifyUrls, track = suggestedTrack)
 }
 
@@ -157,4 +164,21 @@ private suspend fun String.toSongwhipUrl(): String {
       it.printStackTrace()
     }
     .getOrDefault(this)
+}
+
+private suspend fun Target.post(message: String) {
+  when (this) {
+    is Micropub -> post(message)
+    // This is gonna stop working pretty soon anyway so just ignore the errors it's going to start
+    // throwing.
+    is Twitter -> runCatching { post(message) }
+  }
+}
+
+private fun Path.readTextOrEmpty(): String {
+  return if (exists()) {
+    readText()
+  } else {
+    ""
+  }
 }

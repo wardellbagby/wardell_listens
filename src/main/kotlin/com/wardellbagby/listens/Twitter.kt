@@ -8,23 +8,24 @@ import blue.starry.penicillin.core.session.config.application
 import blue.starry.penicillin.core.session.config.token
 import blue.starry.penicillin.core.session.post
 import blue.starry.penicillin.models.Status
+import com.wardellbagby.listens.Target.Twitter
 import io.ktor.utils.io.core.use
 import kotlinx.serialization.json.buildJsonObject
 
 /**
- * Post a Tweet to the account specified by [Environment.twitterAccessToken] with the text contained
+ * Post a Tweet to the account specified by [Target.Twitter.accessToken] with the text contained
  * in [message].
  */
-suspend fun postTweet(message: String) {
+suspend fun Twitter.post(message: String) {
   PenicillinClient {
     account {
       application(
-        consumerKey = environment.twitterConsumerKey,
-        consumerSecret = environment.twitterConsumerSecret
+        consumerKey = this@post.consumerKey,
+        consumerSecret = this@post.consumerSecret
       )
       token(
-        accessToken = environment.twitterAccessToken,
-        accessTokenSecret = environment.twitterAccessTokenSecret
+        accessToken = this@post.accessToken,
+        accessTokenSecret = this@post.accessTokenSecret
       )
     }
   }.use { client ->

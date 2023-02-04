@@ -70,15 +70,7 @@ fun getSuggestedTrack(
       val spotifyUrl = it.track_metadata.additional_info?.spotify_id
       spotifyUrl != null && spotifyUrl !in ignoredSpotifyUrls
     }
-    .also {
-      // Verifies that all Listens occur at distinctly different times to avoid potential
-      // duplicates.
-      val distinctByListenTime = it.distinctBy { listen -> listen.listened_at }
-
-      require(distinctByListenTime.size == it.size) {
-        "Received listens that have the exact same timestamp!"
-      }
-    }
+    .distinctBy { listen -> listen.listened_at }
     .groupBy {
       // Group all listens that share a Spotify ID
       it.track_metadata.additional_info!!.spotify_id
