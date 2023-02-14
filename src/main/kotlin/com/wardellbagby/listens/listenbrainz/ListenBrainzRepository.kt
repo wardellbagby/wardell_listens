@@ -3,9 +3,11 @@ package com.wardellbagby.listens.listenbrainz
 import com.wardellbagby.listens.Configuration
 import com.wardellbagby.listens.Logger
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
+import io.ktor.client.request.url
 import kotlinx.coroutines.delay
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -54,12 +56,14 @@ constructor(
     val listens = mutableListOf<Listen>()
 
     do {
-      val response = httpClient.get<ListensResponse>(listensEndpoint) {
+      val response = httpClient.get {
+        url(listensEndpoint)
         // This endpoint also accepts a "min_ts", but you can't specify both.
         parameter("max_ts", endTimestamp)
         parameter("count", expectedCount)
         header("Accept", "application/json")
       }
+        .body<ListensResponse>()
 
       val newListens = response.payload.listens.filter { it.listened_at >= startTimestamp }
 

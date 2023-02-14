@@ -2,7 +2,10 @@ package com.wardellbagby.listens.tracks
 
 import com.wardellbagby.listens.Logger
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.request.url
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
@@ -16,10 +19,12 @@ class SongwhipConverter(
   suspend fun convert(url: String): String {
     logger.info("Converting URL \"$url\" to a Songwhip URL")
     return runCatching {
-      httpClient.post<SongwhipResponse>(urlString = SONGWHIP_ENDPOINT) {
+      httpClient.post {
+        url(SONGWHIP_ENDPOINT)
         contentType(ContentType.Application.Json)
-        body = mapOf("url" to url)
+        setBody(mapOf("url" to url))
       }
+        .body<SongwhipResponse>()
         .url
         .also {
           logger.info("Received Songwhip URL: $it")
