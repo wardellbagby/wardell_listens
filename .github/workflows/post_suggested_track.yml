@@ -36,7 +36,7 @@ jobs:
         run: 'java -jar build/libs/wardell_listens.jar'
       - name: 'Get suggested track URL'
         id: 'track-url'
-        run: 'echo "::set-output name=IGNORED_TRACK::$(tail -1 /tmp/ignored.txt)"'
+        run: 'echo "IGNORED_TRACK=$(tail -1 /tmp/ignored.txt)" >> $GITHUB_OUTPUT'
       - name: 'Checkout ignored tracks branch'
         uses: 'actions/checkout@v3'
         with:

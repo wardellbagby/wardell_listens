@@ -1,7 +1,7 @@
 package com.wardellbagby.listens
 
-import com.wardellbagby.listens.Target.Micropub
-import com.wardellbagby.listens.Target.Twitter
+import com.wardellbagby.listens.targets.MicropubAuthentication
+import com.wardellbagby.listens.targets.TwitterAuthentication
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -19,28 +19,17 @@ private fun loadFromEnvFile(filename: String): Map<String, String> {
     } ?: emptyMap()
 }
 
-sealed interface Target {
-  data class Twitter(
-    val consumerKey: String,
-    val consumerSecret: String,
-    val accessToken: String,
-    val accessTokenSecret: String,
-  ) : Target
-
-  data class Micropub(
-    val endpoint: String,
-    val accessToken: String
-  ) : Target
-}
-
 /**
- * Represents environment variables that are needed in order to integrate with ListenBrainz
- * and Twitter.
+ * Represents the configuration that is needed in order to integrate with ListenBrainz
+ * and the postable targets.
  */
-data class Environment(
+data class Configuration(
   val listenbrainzUsername: String,
   val ignoredTracksPath: Path,
-  val targets: List<Target>
+  val twitterAuthentication: TwitterAuthentication? = null,
+  val micropubAuthentication: MicropubAuthentication? = null,
+  val dryRun: Boolean,
+  val relativeStartInDays: Int
 )
 
 private fun Map<String, String>.getOrThrow(key: String): String {
@@ -65,29 +54,38 @@ private fun <T> Map<T, *>.containsKeys(vararg keys: T): Boolean {
 }
 
 private const val secretsEnvFile = "secrets.env"
-val environment: Environment =
-  (System.getenv() + loadFromEnvFile(secretsEnvFile))
-    .let {
-      Environment(
-        listenbrainzUsername = it.getOrThrow("LISTENBRAINZ_USERNAME"),
-        ignoredTracksPath = Paths
-          .get(it.getOrThrow("IGNORED_TRACKS_FILE"))
-          .toAbsolutePath(),
-        targets = buildList {
-          if (it.isTwitterEnv()) {
-            add(it.createTwitterTarget())
-          }
-          if (it.isMicropubEnv()) {
-            add(it.createMicropubTarget())
-          }
-        }.ifEmpty {
-          error("Not enough environment variables to publish to either Twitter or Micropup")
-        }
-      )
-    }
 
-private fun Map<String, String>.createTwitterTarget(): Twitter {
-  return Twitter(
+fun getEnv(): Map<String, String> {
+  return System.getenv() + loadFromEnvFile(secretsEnvFile)
+}
+
+fun Map<String, String>.createConfigurationFromEnv(): Configuration {
+  return Configuration(
+    listenbrainzUsername = getOrThrow("LISTENBRAINZ_USERNAME"),
+    ignoredTracksPath = Paths
+      .get(getOrThrow("IGNORED_TRACKS_FILE"))
+      .toAbsolutePath(),
+    twitterAuthentication = runIf(isTwitterEnv()) { createTwitterAuth() },
+    micropubAuthentication = runIf(isMicropubEnv()) { createMicropubAuth() },
+    dryRun = getDryRunValue(),
+    relativeStartInDays = get("RELATIVE_START_IN_DAYS")?.toIntOrNull() ?: 30
+  )
+}
+
+private fun Map<String, String>.getDryRunValue(): Boolean {
+  val dryRun = get("DRY_RUN")
+  val isCI = get("CI") == "true"
+
+  return when (dryRun) {
+    "true" -> true
+    null -> !isCI
+    // If they've explicitly set dry-run to something that isn't true, assume it's false.
+    else -> false
+  }
+}
+
+private fun Map<String, String>.createTwitterAuth(): TwitterAuthentication {
+  return TwitterAuthentication(
     accessToken = getOrThrow(TWITTER_ACCESS_TOKEN),
     accessTokenSecret = getOrThrow(TWITTER_ACCESS_TOKEN_SECRET),
     consumerKey = getOrThrow(TWITTER_CONSUMER_KEY),
@@ -95,8 +93,8 @@ private fun Map<String, String>.createTwitterTarget(): Twitter {
   )
 }
 
-private fun Map<String, String>.createMicropubTarget(): Micropub {
-  return Micropub(
+private fun Map<String, String>.createMicropubAuth(): MicropubAuthentication {
+  return MicropubAuthentication(
     endpoint = getOrThrow(MICROPUB_ENDPOINT),
     accessToken = getOrThrow(MICROPUB_ACCESS_TOKEN)
   )
@@ -108,3 +106,11 @@ private const val TWITTER_CONSUMER_KEY = "TWITTER_CONSUMER_KEY"
 private const val TWITTER_CONSUMER_SECRET = "TWITTER_CONSUMER_SECRET"
 private const val TWITTER_ACCESS_TOKEN = "TWITTER_ACCESS_TOKEN"
 private const val TWITTER_ACCESS_TOKEN_SECRET = "TWITTER_ACCESS_TOKEN_SECRET"
+
+private fun <T> runIf(predicate: Boolean, block: () -> T): T? {
+  return if (predicate) {
+    block()
+  } else {
+    null
+  }
+}
