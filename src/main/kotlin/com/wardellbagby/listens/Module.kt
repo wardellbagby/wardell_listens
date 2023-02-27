@@ -1,5 +1,6 @@
 package com.wardellbagby.listens
 
+import com.wardellbagby.listens.targets.AvailableTargets
 import com.wardellbagby.listens.targets.Micropub
 import com.wardellbagby.listens.targets.Twitter
 import io.ktor.client.engine.cio.CIO
@@ -23,13 +24,15 @@ val appModule = module {
 
   single {
     val configuration: Configuration = get()
-    buildList {
-      if (configuration.twitterAuthentication != null) {
-        add(get<Twitter>())
-      }
-      if (configuration.micropubAuthentication != null) {
-        add(get<Micropub>())
-      }
-    }.ifEmpty { error("Cannot run without any targets to post a message to.") }
+    AvailableTargets(
+      targets = buildList {
+        if (configuration.twitterAuthentication != null) {
+          add(get<Twitter>())
+        }
+        if (configuration.micropubAuthentication != null) {
+          add(get<Micropub>())
+        }
+      }.ifEmpty { error("Cannot run without any targets to post a message to.") }
+    )
   }
 }

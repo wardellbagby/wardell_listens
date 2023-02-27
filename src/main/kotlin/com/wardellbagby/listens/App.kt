@@ -1,7 +1,7 @@
 package com.wardellbagby.listens
 
 import com.wardellbagby.listens.listenbrainz.ListenBrainzRepository
-import com.wardellbagby.listens.targets.Target
+import com.wardellbagby.listens.targets.AvailableTargets
 import com.wardellbagby.listens.tracks.SongwhipConverter
 import com.wardellbagby.listens.tracks.SuggestedTrack
 import com.wardellbagby.listens.tracks.SuggestedTrackFormatter
@@ -21,7 +21,7 @@ class App(
   private val trackSuggester: TrackSuggester,
   private val songwhipConverter: SongwhipConverter,
   private val trackFormatter: SuggestedTrackFormatter,
-  private val targets: List<Target>,
+  private val targets: AvailableTargets,
   private val configuration: Configuration,
   private val logger: Logger
 ) {

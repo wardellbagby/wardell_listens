@@ -13,6 +13,7 @@ import java.nio.file.Paths
 private fun loadFromEnvFile(filename: String): Map<String, String> {
   return loadFromResources(filename)
     ?.split("\n")
+    ?.filterNot { it.startsWith("#") || it.startsWith("//") }
     ?.associate { line ->
       val (key, value) = line.split("=")
       key to value
