@@ -3,6 +3,7 @@ package com.wardellbagby.listens
 import com.wardellbagby.listens.targets.AvailableTargets
 import com.wardellbagby.listens.targets.Micropub
 import com.wardellbagby.listens.targets.Twitter
+import com.wardellbagby.listens.tracks.IgnoredTracks
 import io.ktor.client.engine.cio.CIO
 import org.koin.dsl.module
 import kotlin.random.Random
@@ -20,6 +21,14 @@ val appModule = module {
   }
   factory {
     get<Configuration>().micropubAuthentication!!
+  }
+
+  single<IgnoredTracks> {
+    IgnoredTracks(
+      get<Configuration>().ignoredTracksPath
+        .readTextOrEmpty()
+        .split("\n")
+    )
   }
 
   single {

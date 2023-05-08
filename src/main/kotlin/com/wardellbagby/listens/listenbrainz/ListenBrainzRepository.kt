@@ -21,8 +21,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 @Single
-class ListenBrainzRepository
-constructor(
+class ListenBrainzRepository(
   private val httpClient: HttpClient,
   configuration: Configuration,
   private val logger: Logger

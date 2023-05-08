@@ -15,7 +15,7 @@ data class SuggestedTrack(
 
 @Single
 class TrackSuggester(
-  private val ignoredSpotifyIds: List<String>,
+  private val ignoredTracks: IgnoredTracks,
   private val logger: Logger,
   private val random: Random
 ) {
@@ -29,7 +29,7 @@ class TrackSuggester(
       .filter {
         // Filter out any listens that don't have a Spotify ID or that have been suggested before.
         val spotifyUrl = it.track_metadata.additional_info?.spotify_id
-        spotifyUrl != null && spotifyUrl !in ignoredSpotifyIds
+        spotifyUrl != null && spotifyUrl !in ignoredTracks
       }
       .distinctBy { listen -> listen.listened_at }
       .groupBy {

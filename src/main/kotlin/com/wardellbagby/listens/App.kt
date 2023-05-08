@@ -2,6 +2,7 @@ package com.wardellbagby.listens
 
 import com.wardellbagby.listens.listenbrainz.ListenBrainzRepository
 import com.wardellbagby.listens.targets.AvailableTargets
+import com.wardellbagby.listens.tracks.IgnoredTracks
 import com.wardellbagby.listens.tracks.SongwhipConverter
 import com.wardellbagby.listens.tracks.SuggestedTrack
 import com.wardellbagby.listens.tracks.SuggestedTrackFormatter
@@ -9,9 +10,6 @@ import com.wardellbagby.listens.tracks.TrackSuggester
 import io.ktor.utils.io.printStack
 import kotlinx.datetime.Clock
 import org.koin.core.annotation.Single
-import java.nio.file.Path
-import kotlin.io.path.exists
-import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.time.Duration.Companion.days
 
@@ -23,6 +21,7 @@ class App(
   private val trackFormatter: SuggestedTrackFormatter,
   private val targets: AvailableTargets,
   private val configuration: Configuration,
+  private val ignoredTracks: IgnoredTracks,
   private val logger: Logger
 ) {
   suspend fun run() {
@@ -36,11 +35,9 @@ class App(
     val now = Clock.System.now()
     val lastMonth = now.minus(configuration.relativeStartInDays.days)
 
-    val ignoredSpotifyUrls = configuration.ignoredTracksPath
-      .readTextOrEmpty()
-      .split("\n")
 
-    logger.verbose("Ignored spotify URLs: $ignoredSpotifyUrls")
+
+    logger.verbose("Ignored track IDs: $ignoredTracks")
 
     val listens = runCatching {
       listenBrainzRepository.fetchListens(start = lastMonth, end = now)
@@ -77,27 +74,21 @@ class App(
       }
     }
     if (!configuration.dryRun) {
-      updateIgnoredTracks(currentIgnoredTracks = ignoredSpotifyUrls, track = suggestedTrack)
+      updateIgnoredTracks(currentIgnoredTracks = ignoredTracks, track = suggestedTrack)
     }
   }
 
   /**
    * Write the track that was suggested to the file specified by [Configuration.ignoredTracksPath].
    */
-  private fun updateIgnoredTracks(currentIgnoredTracks: List<String>, track: SuggestedTrack) {
+  private fun updateIgnoredTracks(currentIgnoredTracks: IgnoredTracks, track: SuggestedTrack) {
     logger.info("Adding ${track.id} to ignored using file ${configuration.ignoredTracksPath}")
 
-    val content = (currentIgnoredTracks + track.id).joinToString(separator = "\n")
+    val content = (currentIgnoredTracks + track.id)
+      .distinct()
+      .joinToString(separator = "\n")
 
     configuration.ignoredTracksPath
       .writeText(content)
-  }
-
-  private fun Path.readTextOrEmpty(): String {
-    return if (exists()) {
-      readText()
-    } else {
-      ""
-    }
   }
 }

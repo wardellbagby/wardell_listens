@@ -11,7 +11,7 @@ import kotlin.test.assertTrue
 
 class TrackSuggesterTest {
   private val trackSuggester = TrackSuggester(
-    ignoredSpotifyIds = listOf("789", "987"),
+    ignoredTracks = IgnoredTracks(listOf("789", "987")),
     logger = FakeLogger(),
     random = Random(0xbeefcafe)
   )
