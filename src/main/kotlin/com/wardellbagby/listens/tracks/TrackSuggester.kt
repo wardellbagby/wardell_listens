@@ -28,8 +28,22 @@ class TrackSuggester(
     val trackCounts = listens
       .filter {
         // Filter out any listens that don't have a Spotify ID or that have been suggested before.
-        val spotifyUrl = it.track_metadata.additional_info?.spotify_id
-        spotifyUrl != null && spotifyUrl !in ignoredTracks
+        val spotifyUrl = it.track_metadata.additional_info?.spotify_id?.ifBlank { null }
+
+        val isIgnoredTrack = spotifyUrl in ignoredTracks
+        val isListenSuggestible = spotifyUrl != null && !isIgnoredTrack
+
+        if (!isListenSuggestible) {
+          val reason = when (spotifyUrl) {
+            null -> "without a Spotify ID"
+            else -> "that is ignored"
+          }
+          logger.verbose(
+            "Skipping listen of \"${it.track_metadata.track_name}\" $reason"
+          )
+        }
+
+        isListenSuggestible
       }
       .distinctBy { listen -> listen.listened_at }
       .groupBy {
