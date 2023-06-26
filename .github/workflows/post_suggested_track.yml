@@ -21,8 +21,6 @@ jobs:
           java-version: '11'
       - name: "Download ignored tracks"
         run: 'curl https://raw.githubusercontent.com/$GITHUB_REPOSITORY/ignored-tracks/ignored.txt --output /tmp/ignored.txt'
-      - name: 'Build the jar'
-        run: './gradlew shadowJar'
       - name: 'Publish suggested track'
         env:
           LISTENBRAINZ_USERNAME: '${{ secrets.LISTENBRAINZ_USERNAME }}'
@@ -33,7 +31,7 @@ jobs:
           MICROPUB_ACCESS_TOKEN: '${{ secrets.MICROPUB_ACCESS_TOKEN }}'
           MICROPUB_ENDPOINT: '${{ secrets.MICROPUB_ENDPOINT }}'
           IGNORED_TRACKS_FILE: '/tmp/ignored.txt'
-        run: 'java -jar build/libs/wardell_listens.jar'
+        run: './gradlew run'
       - name: 'Get suggested track URL'
         id: 'track-url'
         run: 'echo "IGNORED_TRACK=$(tail -1 /tmp/ignored.txt)" >> $GITHUB_OUTPUT'

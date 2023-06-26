@@ -4,8 +4,8 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 plugins {
   kotlin("jvm") version "1.8.10"
   kotlin("plugin.serialization") version "1.8.10"
-  id("com.github.johnrengelman.shadow") version "5.0.0"
   id("com.google.devtools.ksp") version "1.8.10-1.0.9"
+  application
 }
 
 group = "com.wardellbagby"
@@ -14,11 +14,12 @@ repositories {
   mavenCentral()
 }
 
-tasks.jar {
-  archiveFileName.set("dist.jar")
-  manifest {
-    attributes["Main-Class"] = "com.wardellbagby.listens.MainKt"
-  }
+application {
+  mainClass.set("com.wardellbagby.listens.MainKt")
+}
+
+kotlin {
+  jvmToolchain(11)
 }
 
 sourceSets.main {
@@ -55,10 +56,4 @@ dependencies {
 
   testImplementation("org.jetbrains.kotlin:kotlin-test")
   testImplementation("io.ktor:ktor-client-mock:2.2.3")
-}
-
-tasks {
-  shadowJar {
-    archiveClassifier.set("")
-  }
 }

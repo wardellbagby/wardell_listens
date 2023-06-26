@@ -7,7 +7,6 @@ import com.wardellbagby.listens.tracks.SongwhipConverter
 import com.wardellbagby.listens.tracks.SuggestedTrack
 import com.wardellbagby.listens.tracks.SuggestedTrackFormatter
 import com.wardellbagby.listens.tracks.TrackSuggester
-import io.ktor.utils.io.printStack
 import kotlinx.datetime.Clock
 import org.koin.core.annotation.Single
 import kotlin.io.path.writeText
@@ -45,8 +44,7 @@ class App(
       .fold(
         onSuccess = { it },
         onFailure = {
-          it.printStack()
-          return
+          throw IllegalStateException("Failed to fetch listens", it)
         }
       )
 
