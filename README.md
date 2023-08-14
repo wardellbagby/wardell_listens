@@ -1,12 +1,13 @@
-# [Wardell Listens](https://services.wardell.dev/listens)
+# [Wardell Listens](https://listens.wardell.dev)
 
 It's true. I'm Wardell, and listen is what I do.
 
 ## What is this?
 
-This is a repository containing the code that runs
-the [@listens@wardell.dev Mastodon-compatible account](https://services.wardell.dev/listens/remote_follow)
+This is a repository containing the code that updates
+the [@listens@wardell.dev Mastodon-compatible account](https://listens.wardell.dev/)
 and [@wardell_listens Twitter account](https://twitter.com/wardell_listens).
+
 
 ## How does it work?
 
