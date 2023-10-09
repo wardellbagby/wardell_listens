@@ -33,19 +33,15 @@ class ListenBrainzRepository(
     start: Instant,
     end: Instant
   ): List<Listen> {
-    with(DateTimeFormatter.ofLocalizedDateTime(FULL)) {
-      val startDateTime =
-        ZonedDateTime.ofInstant(
-          start.toJavaInstant(),
-          TimeZone.currentSystemDefault().toJavaZoneId()
-        )
-      val endDateTime =
-        ZonedDateTime.ofInstant(end.toJavaInstant(), TimeZone.currentSystemDefault().toJavaZoneId())
+    val dateTimeFormatter = DateTimeFormatter.ofLocalizedDateTime(FULL)
+    val zoneId = TimeZone.currentSystemDefault().toJavaZoneId()
 
-      logger.info(
-        "Fetching listens from ${format(startDateTime)} to ${format(endDateTime)}"
-      )
-    }
+    val startDateTime = ZonedDateTime.ofInstant(start.toJavaInstant(), zoneId)
+    val endDateTime = ZonedDateTime.ofInstant(end.toJavaInstant(), zoneId)
+
+    logger.info(
+      "Fetching listens from ${dateTimeFormatter.format(startDateTime)} to ${dateTimeFormatter.format(endDateTime)}"
+    )
 
     val startTimestamp = start.epochSeconds
     var endTimestamp = end.epochSeconds
@@ -55,6 +51,12 @@ class ListenBrainzRepository(
     val listens = mutableListOf<Listen>()
 
     do {
+      with(ZonedDateTime.ofInstant(Instant.fromEpochSeconds(endTimestamp).toJavaInstant(), zoneId)) {
+        logger.verbose(
+          "Fetching at most $expectedCount listens that occurred before ${dateTimeFormatter.format(this)} (epoch seconds: $endTimestamp)"
+        )
+      }
+
       val response = httpClient.get {
         url(listensEndpoint)
         // This endpoint also accepts a "min_ts", but you can't specify both.

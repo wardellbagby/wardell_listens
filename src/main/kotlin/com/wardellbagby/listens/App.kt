@@ -34,8 +34,6 @@ class App(
     val now = Clock.System.now()
     val lastMonth = now.minus(configuration.relativeStartInDays.days)
 
-
-
     logger.verbose("Ignored track IDs: $ignoredTracks")
 
     val listens = runCatching {

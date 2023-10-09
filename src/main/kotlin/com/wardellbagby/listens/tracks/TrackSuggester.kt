@@ -28,18 +28,25 @@ class TrackSuggester(
     val trackCounts = listens
       .filter {
         // Filter out any listens that don't have a Spotify ID or that have been suggested before.
-        val spotifyUrl = it.track_metadata.additional_info?.spotify_id?.ifBlank { null }
+        val spotifyUrl = it.track_metadata?.additional_info?.spotify_id?.ifBlank { null }
+        val artistName = it.track_metadata?.artist_name?.ifBlank { null }
+        val trackName = it.track_metadata?.track_name?.ifBlank { null }
 
         val isIgnoredTrack = spotifyUrl in ignoredTracks
-        val isListenSuggestible = spotifyUrl != null && !isIgnoredTrack
+        val isListenSuggestible = spotifyUrl != null &&
+                artistName != null &&
+                trackName != null &&
+                !isIgnoredTrack
 
         if (!isListenSuggestible) {
-          val reason = when (spotifyUrl) {
-            null -> "without a Spotify ID"
+          val reason = when {
+            spotifyUrl == null -> "without a Spotify ID"
+            artistName == null -> "without an artist name"
+            trackName == null -> "without a track name"
             else -> "that is ignored"
           }
           logger.verbose(
-            "Skipping listen of \"${it.track_metadata.track_name}\" $reason"
+            "Skipping listen of \"${it.track_metadata?.track_name ?: "unknown track"}\" $reason"
           )
         }
 
@@ -48,7 +55,7 @@ class TrackSuggester(
       .distinctBy { listen -> listen.listened_at }
       .groupBy {
         // Group all listens that share a Spotify ID
-        it.track_metadata.additional_info!!.spotify_id
+        it.track_metadata!!.additional_info!!.spotify_id
       }
       .map { (_, listens) ->
         // Convert into a Map of Listen to the number of times that Listen was seen.
@@ -69,11 +76,11 @@ class TrackSuggester(
       }
       .randomOrNull(random = random)
       ?.let { (listen, count) ->
-        val url = listen.track_metadata.additional_info!!.spotify_id!!
+        val url = listen.track_metadata?.additional_info?.spotify_id!!
         SuggestedTrack(
           id = url,
-          name = listen.track_metadata.track_name,
-          artist = listen.track_metadata.artist_name,
+          name = listen.track_metadata.track_name!!,
+          artist = listen.track_metadata.artist_name!!,
           url = url,
           listenCount = count
         )
@@ -83,6 +90,6 @@ class TrackSuggester(
 
 private fun List<Pair<Listen, Int>>.toLogMessage(): String {
   return joinToString(separator = "\n") { (listen, count) ->
-    "$count - ${listen.track_metadata.track_name}"
+    "$count - ${listen.track_metadata?.track_name!!}"
   }
 }

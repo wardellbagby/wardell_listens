@@ -38,8 +38,8 @@ class TrackSuggesterTest {
       listensThatMatch = { index, _ -> index > 90 },
       areChangedToBe = { _, listen ->
         listen.copy(
-          track_metadata = listen.track_metadata.copy(
-            additional_info = listen.track_metadata.additional_info?.copy(
+          track_metadata = listen.track_metadata?.copy(
+            additional_info = listen.track_metadata?.additional_info?.copy(
               spotify_id = null
             )
           )
@@ -61,8 +61,8 @@ class TrackSuggesterTest {
       listensThatMatch = { index, _ -> index < 20 },
       areChangedToBe = { index, listen ->
         listen.copy(
-          track_metadata = listen.track_metadata.copy(
-            additional_info = listen.track_metadata.additional_info?.copy(
+          track_metadata = listen.track_metadata?.copy(
+            additional_info = listen.track_metadata?.additional_info?.copy(
               spotify_id = (index % 10).toString()
             )
           )
