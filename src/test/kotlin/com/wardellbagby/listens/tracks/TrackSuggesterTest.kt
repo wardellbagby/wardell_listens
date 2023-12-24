@@ -6,7 +6,6 @@ import com.wardellbagby.listens.listenbrainz.Listen
 import com.wardellbagby.listens.listenbrainz.TrackMetadata
 import org.junit.Test
 import kotlin.random.Random
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class TrackSuggesterTest {
@@ -20,7 +19,7 @@ class TrackSuggesterTest {
   fun `fails to generate with no listens`() {
     val actual = trackSuggester.generate(listOf())
 
-    assertNull(actual)
+    assertTrue(actual.isEmpty())
   }
 
   @Test
@@ -28,7 +27,7 @@ class TrackSuggesterTest {
     (1 until 10).forEach {
       val actual = trackSuggester.generate(LISTENS.take(it))
 
-      assertNull(actual)
+      assertTrue(actual.isEmpty())
     }
   }
 
@@ -48,10 +47,15 @@ class TrackSuggesterTest {
     )
 
     runSuggesterAssertions {
-      val actual = trackSuggester.generate(listens)
-      val id = actual?.id?.toInt()!!
-      assertTrue(id <= 90, message = "Expect $id to be greater than 90")
-      assertTrue(actual.url.isNotBlank(), message = "Expect ${actual.url} to not be blank")
+      trackSuggester.generate(listens)
+        .also {
+          assertTrue(it.isNotEmpty(), message = "Received an empty list of tracks!")
+        }
+        .forEach { actual ->
+          val id = actual.id.toInt()
+          assertTrue(id <= 90, message = "Expect $id to be greater than 90")
+          assertTrue(actual.url.isNotBlank(), message = "Expect ${actual.url} to not be blank")
+        }
     }
   }
 
@@ -71,10 +75,15 @@ class TrackSuggesterTest {
     )
 
     runSuggesterAssertions {
-      val actual = trackSuggester.generate(listens)
-      val id = actual?.id?.toInt()!!
-      assertTrue(id < 20, message = "Expect $id to be greater than 90")
-      assertTrue(actual.url.isNotBlank(), message = "Expect ${actual.url} to not be blank")
+      trackSuggester.generate(listens)
+        .also {
+          assertTrue(it.isNotEmpty(), message = "Received an empty list of tracks!")
+        }
+        .forEach { actual ->
+          val id = actual.id.toInt()
+          assertTrue(id < 20, message = "Expect $id to be greater than 90")
+          assertTrue(actual.url.isNotBlank(), message = "Expect ${actual.url} to not be blank")
+        }
     }
   }
 

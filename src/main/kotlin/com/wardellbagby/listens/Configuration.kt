@@ -2,6 +2,7 @@ package com.wardellbagby.listens
 
 import com.wardellbagby.listens.targets.MicropubAuthentication
 import com.wardellbagby.listens.targets.TwitterAuthentication
+import com.wardellbagby.listens.telegram.TelegramAuthentication
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -30,7 +31,9 @@ data class Configuration(
   val twitterAuthentication: TwitterAuthentication? = null,
   val micropubAuthentication: MicropubAuthentication? = null,
   val dryRun: Boolean,
-  val relativeStartInDays: Int
+  val relativeStartInDays: Int,
+  val manuallySelectTrack: Boolean = false,
+  val telegramAuthentication: TelegramAuthentication? = null
 )
 
 private fun Map<String, String>.getOrThrow(key: String): String {
@@ -61,6 +64,7 @@ fun getEnv(): Map<String, String> {
 }
 
 fun Map<String, String>.createConfigurationFromEnv(): Configuration {
+  val manuallySelectTrack = get("MANUALLY_SELECT_TRACK").toBoolean()
   return Configuration(
     listenbrainzUsername = getOrThrow("LISTENBRAINZ_USERNAME"),
     ignoredTracksPath = Paths
@@ -69,7 +73,9 @@ fun Map<String, String>.createConfigurationFromEnv(): Configuration {
     twitterAuthentication = runIf(isTwitterEnv()) { createTwitterAuth() },
     micropubAuthentication = runIf(isMicropubEnv()) { createMicropubAuth() },
     dryRun = getDryRunValue(),
-    relativeStartInDays = get("RELATIVE_START_IN_DAYS")?.toIntOrNull() ?: 30
+    relativeStartInDays = get("RELATIVE_START_IN_DAYS")?.toIntOrNull() ?: 30,
+    manuallySelectTrack = manuallySelectTrack,
+    telegramAuthentication = runIf(manuallySelectTrack) { createTelegramAuthentication() }
   )
 }
 
@@ -101,12 +107,21 @@ private fun Map<String, String>.createMicropubAuth(): MicropubAuthentication {
   )
 }
 
+private fun Map<String, String>.createTelegramAuthentication(): TelegramAuthentication {
+  return TelegramAuthentication(
+    botToken = getOrThrow(TELEGRAM_BOT_TOKEN),
+    chatId = getOrThrow(TELEGRAM_CHAT_ID).toLong()
+  )
+}
+
 private const val MICROPUB_ACCESS_TOKEN = "MICROPUB_ACCESS_TOKEN"
 private const val MICROPUB_ENDPOINT = "MICROPUB_ENDPOINT"
 private const val TWITTER_CONSUMER_KEY = "TWITTER_CONSUMER_KEY"
 private const val TWITTER_CONSUMER_SECRET = "TWITTER_CONSUMER_SECRET"
 private const val TWITTER_ACCESS_TOKEN = "TWITTER_ACCESS_TOKEN"
 private const val TWITTER_ACCESS_TOKEN_SECRET = "TWITTER_ACCESS_TOKEN_SECRET"
+private const val TELEGRAM_BOT_TOKEN = "TELEGRAM_BOT_TOKEN"
+private const val TELEGRAM_CHAT_ID = "TELEGRAM_CHAT_ID"
 
 private fun <T> runIf(predicate: Boolean, block: () -> T): T? {
   return if (predicate) {

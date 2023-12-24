@@ -12,6 +12,7 @@ group = "com.wardellbagby"
 
 repositories {
   mavenCentral()
+  maven(url = "https://jitpack.io")
 }
 
 application {
@@ -53,6 +54,7 @@ dependencies {
   implementation("org.jetbrains.kotlin:kotlin-stdlib")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
   implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.3")
+  implementation("com.github.elbekD:kt-telegram-bot:2.2.0")
 
   testImplementation("org.jetbrains.kotlin:kotlin-test")
   testImplementation("io.ktor:ktor-client-mock:2.2.3")

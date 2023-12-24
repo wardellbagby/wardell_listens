@@ -24,7 +24,7 @@ class TrackSuggester(
    *
    * @param listens A list of [Listen]s from ListenBrainz.
    */
-  fun generate(listens: List<Listen>): SuggestedTrack? {
+  fun generate(listens: List<Listen>, count: Int = 10): List<SuggestedTrack> {
     val trackCounts = listens
       .filter {
         // Filter out any listens that don't have a Spotify ID or that have been suggested before.
@@ -74,8 +74,18 @@ class TrackSuggester(
       .also {
         logger.verbose("Possible choices", it.toLogMessage())
       }
-      .randomOrNull(random = random)
-      ?.let { (listen, count) ->
+      .let { suggestibleTracks ->
+        if (suggestibleTracks.size > count) {
+          val selected = mutableSetOf<Pair<Listen, Int>>()
+          while (selected.size < count) {
+            selected.add(suggestibleTracks.random(random))
+          }
+          selected
+        } else {
+          suggestibleTracks.shuffled()
+        }
+      }
+      .map { (listen, count) ->
         val url = listen.track_metadata?.additional_info?.spotify_id!!
         SuggestedTrack(
           id = url,

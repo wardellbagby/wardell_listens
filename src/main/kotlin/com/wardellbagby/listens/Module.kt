@@ -22,6 +22,9 @@ val appModule = module {
   factory {
     get<Configuration>().micropubAuthentication!!
   }
+  factory {
+    get<Configuration>().telegramAuthentication
+  }
 
   single<IgnoredTracks> {
     IgnoredTracks(

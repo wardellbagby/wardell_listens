@@ -2,6 +2,7 @@ package com.wardellbagby.listens
 
 import com.wardellbagby.listens.listenbrainz.ListenBrainzRepository
 import com.wardellbagby.listens.targets.AvailableTargets
+import com.wardellbagby.listens.telegram.TelegramBot
 import com.wardellbagby.listens.tracks.IgnoredTracks
 import com.wardellbagby.listens.tracks.SongwhipConverter
 import com.wardellbagby.listens.tracks.SuggestedTrack
@@ -18,6 +19,7 @@ class App(
   private val trackSuggester: TrackSuggester,
   private val songwhipConverter: SongwhipConverter,
   private val trackFormatter: SuggestedTrackFormatter,
+  private val telegramBot: TelegramBot,
   private val targets: AvailableTargets,
   private val configuration: Configuration,
   private val ignoredTracks: IgnoredTracks,
@@ -48,7 +50,18 @@ class App(
 
     logger.verbose("Found ${listens.size} total listens!")
 
-    val suggestedTrack = trackSuggester.generate(listens = listens)
+    val suggestedTracks = trackSuggester.generate(
+      listens = listens,
+      count = if (configuration.manuallySelectTrack) 10 else 1
+    )
+      .ifEmpty { null }
+      ?.let { suggestions ->
+        if (configuration.manuallySelectTrack) {
+          telegramBot.getSuggestedTrack(suggestions = suggestions)
+        } else {
+          suggestions.firstOrNull()
+        }
+      }
       ?.let {
         logger.info("Selected track", it)
 
@@ -60,7 +73,7 @@ class App(
 
     targets.forEach { target ->
       val message = trackFormatter
-        .format(track = suggestedTrack, maxLength = target.maxLength)
+        .format(track = suggestedTracks, maxLength = target.maxLength)
         .also {
           logger.info("Message for ${target.loggableName}", it)
         }
@@ -70,7 +83,7 @@ class App(
       }
     }
     if (!configuration.dryRun) {
-      updateIgnoredTracks(currentIgnoredTracks = ignoredTracks, track = suggestedTrack)
+      updateIgnoredTracks(currentIgnoredTracks = ignoredTracks, track = suggestedTracks)
     }
   }
 

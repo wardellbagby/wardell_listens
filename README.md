@@ -14,7 +14,9 @@ and [@wardell_listens Twitter account](https://twitter.com/wardell_listens).
 It uses my [ListenBrainz listens](https://listenbrainz.org/user/wardellbagby/)
 to send out a new track every week, based on what I listened to the past month. It uses a GitHub
 action, scheduled to run every Monday morning, to comb through the monthly listens and
-find a new track to post.
+find a new track to post. Optionally, you can have it message you on Telegram in order to allow you to choose from a 
+list of a maximum of ten tracks. Those tracks will still be randomly selected based on your listens, but this allows you
+to avoid certain..._spicier_ songs you might not want to post publicly. ;)
 
 In order to avoid duplicates, it will also post a new commit to this repo on
 the [ignored-tracks branch](https://github.com/wardellbagby/wardell_listens/blob/ignored-tracks/ignored.txt)
@@ -49,10 +51,14 @@ You sure can! Fork this project into your own repository and set up these secret
    application.
 8. TWITTER_ACCESS_TOKEN: (Optional) The OAuth1 access token for your Twitter account. You can get
    this by
-   manually [authenticating with Twitter](https://developer.twitter.com/en/docs/authentication/oauth-1-0a/obtaining-user-access-tokens)
+   manually [authenticating 
+9. with Twitter](https://developer.twitter.com/en/docs/authentication/oauth-1-0a/obtaining-user-access-tokens)
    using the OAuth1 PIN-based flow.
-9. TWITTER_ACCESS_TOKEN_SECRET: (Optional) Can be retrieved from the same flow as the
-   TWITTER_ACCESS_TOKEN.
+10. MANUALLY_SELECT_TRACK: (Optional, defaults to false) Whether to message you on Telegram to allow you to select a track 
+   before posting. Requires TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID to be set.
+11. TELEGRAM_BOT_TOKEN: (Optional, required if MANUALLY_SELECT_TRACK is true) A Telegram bot token to use when messaging
+    you to select a track from a list of options.
+12. TELEGRAM_CHAT_ID: (Optional, required if MANUALLY_SELECT_TRACK is true) The Telegram chat to message.
 
 While the Micropub and Twitter tokens are individually optional, at least one full set is required
 or this will throw an error as it won't have anything to do.
